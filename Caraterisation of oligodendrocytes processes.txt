@@ -1,0 +1,994 @@
+//Generic variables (folders, mainly)
+var inDir=""; //Input directory
+var experimentName=""; //Experiment's name, file basename
+var outDir=""; //Output directory
+var trackDir=""; //Output directory for data used to do the tracking
+var analysisDir=""; //Ouput directory for analysis results
+var positions; //Stores the positions' names 
+var channels; //Stores the channels' names
+var nTimePoints=100; //Stores the number of timepoints
+
+var rois; //Stores the cell rois path
+var cellWindow=15;
+
+//Variables dealing with cell cropping
+var cellNb;
+var nbCells=0;
+var timepoint;
+var x;
+var y;
+var nTPperCell;
+var defaultCellBodySize=32;
+var defaultCellDiameter=64;
+var cellBody=32;
+var cellDiameter=64;
+var cellsToAnalyse;
+var outDirAnalysis;
+
+var leftButton=16;
+var rightButton=4;
+var shift=1;
+var ctrl=2; 
+
+
+//------------------------------------------------------------------------------
+macro "Build Stacks Action Tool - C762Df7Df8C763D05D06Cfc0D1aD2aD3aD4aD5aD6aD7aD8aD9aDaaDbaDcaDdaDeaC998D81Ce81Da4Cfb3D95Da5Cfb1D83D93Da3Db3Dc3Dd3Cb90De2C775Df2Cfd0D2bD2cD3bD3cD4bD4cD5bD5cD6bD6cD7bD7cD8bD8cD9bD9cDabDacDbbDbcDcbDccDdbDdcCccbD12Cfc0D69D79D89D99Da9Db9Dc9Dd9Cfb4D85Cfb1Dc7C763D07D08Df3Df6Ca83D63Cfd0D1bD1cDebDecCfd7D75Cfb0Da8Db8Dc8Dd8De9Cfb4Dd5Cfb0D98Ced0D2dD3dD4dD5dD6dD7dD8dD9dDadDbdDcdDddC887D91Da1Db1Dc1Dd1CcccD0eDfeCfc7D15Cfc2Db7C762D09D0aD0bDf9DfaDfbC774D2eD3eD4eD5eD6eD7eD8eD9eDaeDbeDceDdeCbbaD22D32D42D52Cfb0Dd7De7De8Cfc3D27D37D47D57D67D77D87D97Cdb0D1dD92Da2Db2Dc2Dd2DedC887D03CfebD24D34D44D54Cfc6D26D36D46D56D66D76D86D96Da6Db6Cfc2D28D38D48D58D68C973D13Ca84D23D33D43D53Cfd9D14Cfb1De3Cfc0D19D29D39D49D59CdddD71Df1C753Df4Df5C664D0dD72DfdCaa9D62De1Ce91Dd4Cfb3D17Da7Dc5De6Cba0D82C776D1eDeeCfebD64Cfc5D16Dc6Dd6Cfb1D18D78C772D0cDfcCfd8D25D35D45D55D65Cea2De5Cd81D84D94De4CfffD02C764D04Ce81Db4Dc4Cfb3Db5Cfb5D74Cfc1D88Cc91D73"{
+	buildStacks();
+}
+
+//------------------------------------------------------------------------------
+macro "Detect and Track Cells Action Tool - CfffD18D1fD71Dc0De8DefCfffDf4CfffD7fD8fDf5CfffD90CfffD0bD0fDfbDffCfffDb7CfffD63CfffD46Da7CfffD56Db0CfffDa0CeeeD4eCeeeDbeCeeeDe2CeeeD66CeeeD19De7De9CeeeD27D97Da2Da8CeeeDd1CeeeDb2CeeeD85CeeeD84CeeeD64CeeeD65CeeeCdddD3eCdddDceCdddD0cD86Dd4Dd5DfcCdddDc3Dc6CdddD83CdddD92CdddCcccD81CcccD72CcccDb8Dc7CcccD5eCcccDaeCcccDd8CcccD4bCbbbD1aD2eCbbbDeaCbbbDc2DdeCbbbCaaaD96CaaaD93CaaaDd6CaaaDe3CaaaD8aDe6CaaaDd3CaaaC999D0dC999DfdC999D37D7aDc1C999D57C999DbaC999DabC999D7eC888D6eDbdC888D4dC888D8eC888D0eDfeC888D9eC888D6aC888DbbC888D28D79DbcC888D4cC888D74D75D91C888De4C888Dc9De5C888D1eD5aD73C777D89DeeC777D76Dd2C777D5bD82D9aC777Dc4Dc5C777Dd7C777D87Da1Db1C777D77C777D58Dc8C777D4aDb9C777C666D3bC666D1bC666DebC666D98C666C555Db3Db6C555DaaC555D47D59C555D8bC555D88C555D67D7bD7cD7dD8cD8dC444D78Da9C444Dd9C444D2aDa6C444Da3C444D3aC444D49C444C333D9bC333D29C333D3dDcdC333D94D95C333C222D48C222D1cDecC222C111D2bC111D6bC111DcaC111D69C111D5dC111DadC111D99DacC000D5cC000DccC000D3cC000DdaC000D2dC000DddC000D1dD38DedC000DcbC000D6dDb4Db5C000D68D9dC000D2cD39D6cD9cDa4Da5DdbDdc"{
+	performTracking();
+}
+
+//------------------------------------------------------------------------------
+macro "Cut out cells Action Tool - C555D04D05D0aD0bD13D16D19D1cD23D26D29D2cD34D35D36D39D3aD3bD46D49D57D58D59D67D68D77D78D86D87D88D89D96D97D98D99Da6Da7Da8Da9Db5Db6Db9DbaDc5Dc6Dc9DcaDd5Dd6Dd9DdaDe5DeaCdddD03D06D09D0cD14D15D17D1aD1bD24D25D27D28D2aD2bD33D37D38D3cD44D45D47D48D4aD4bD56D66D69D76D79D95D9aDa5DaaDb7Db8Dc4Dc7Dc8DcbDd4DdbDe4De6De9DebDf4Df5DfaDfb"{
+	cutOutCells();
+}
+
+//------------------------------------------------------------------------------
+macro "Rrrrrr Action Tool -  C111D9cCdedD27D33D49Db2C24bDcbC564D17D19D73CefeD06Df7CabaD55D72Dd3Df9C016D8cCddeDeeC47eD79D7cC777D9bCeefDceDecCabdD98C343D64CeedD1aD28C46cDa9DcdC665D16D3bCdefD66D67D68D69CbbbD84C247D9aCeeeD26D4cD52Df8C79bDabC9a9D3aDeaCeffD65CabfDa5C342D83C45bDddC555Df5CbbaD29D44C137D8dCdeeDe6C47fDccC997D07D39D53D63CcdcD15D5aC554D2aD38D4bD54D5bC46dD7bD86C776Df6CbbcDd5C34aDa6C57fD77Caa9D82CfffD2bCdddD35C332D36D45Da3C35bD99Dd8C236DcaC57eD78D7aD7dDc8C669D97CccdD8eD94D9dDdeC235DdbC35dDc6C676D74Dc4CbcbD08D24Da2C24aD96C9adDb7CacfD75C333D37C35cD8aDb6Dd7C565DacDc3De4CaabDe8C139D88CcddDa7DdaC46eD76Dc7C796D34D43CcccD46D62Da4C45aDbcC9bfD85D95Db5CaaaD92Db4CfffDbdCcdfD6dDb8C232D93Db3C34bDdcC027D8bDbaC797D25D4aD5cDe5C443D18Dd4C249Dc9C99bDe7C46bDaaC129D87C35aDb9Dd6CcdeD7eC56aD6cC36dD89C567Dd9C459DedC9aeDc5CbcfD6aC23aDbbC46aD6b"{
+	GUI_Build(false, false, false);
+	dir=getFileList(analysisDir);
+	for(i=0; i<dir.length; i++){
+		if(File.isDirectory(analysisDir+dir[i])){
+			baseNames=getSpecificFilesList(analysisDir+dir[i], ".xls");
+			if(baseNames.length>0){
+				//Individual analysis per cell
+				script=getRScript(analysisDir+dir[i], baseNames[0]);
+				name="OligodendrocytesAnalysis_"+replace(dir[i], File.separator, "")+"_Individual-Analysis.R";
+				execR(script, name);
+				result=File.copy(getDirectory("imagej")+name, analysisDir+dir[i]+name);
+				result=File.delete(getDirectory("imagej")+name);
+
+				//Global analysis per position
+				scriptGlobal=getRScriptPerPosition(analysisDir+dir[i], baseNames[0]);
+				name="OligodendrocytesAnalysis_"+replace(dir[i], File.separator, "")+"_Global-Analysis.R";
+				execR(scriptGlobal, name);
+				result=File.copy(getDirectory("imagej")+name, analysisDir+dir[i]+name);
+				result=File.delete(getDirectory("imagej")+name);
+			}
+		}
+	}
+}
+
+//------------------------------------------------------------------------------
+macro "Per Condition Data Pulling Action Tool -  C000D11D12D13D14D15D16D17D18D19D1aD1bD1cD1dD1eD1fD2fD3fD4fD5fD6fD7fD8fD9fDafDbfDcfDdfDefDffCa00D48C200D39Cf00D28D29D38D47D56D57D66D67D77D78D79D89D8aD8bD9aD9bDa7Da8Da9DaaDb5Db6Db7Db8Dc4Dc5Dd3Dd4De3Df2Df3Cd00D65C400D9cCb00D99C200D88Cf00D37C800D46C300De4C900Dc6"{
+	GUI_Build(false, false, false);
+	startStop= GUI_Positions();
+
+	fuseAndSaveXLS(startStop[0], startStop[1]);
+
+	//Global analysis per condition
+	baseName="Pulled_data_pos"+startStop[0]+"-"+startStop[1];
+	scriptGlobal=getRScriptPerPosition(analysisDir, baseName+".xls");
+	baseName=baseName+"_Global-Analysis.R";
+	execR(scriptGlobal, baseName);
+	result=File.copy(getDirectory("imagej")+baseName, analysisDir+baseName);
+	result=File.delete(getDirectory("imagej")+baseName);
+}
+
+//------------------------------------------------------------------------------
+function buildStacks(){
+	GUI_Build(true, true, true);
+
+	setBatchMode(true);
+
+	for(i=0; i<positions.length; i++){
+		currPos=positions[i];
+		for(j=0; j<channels.length; j++){
+			currChannel=channels[j];
+			currDir=inDir+currPos;
+			
+			run("Image Sequence...", "open=["+currDir+"] file=["+currChannel+"] number="+nTimePoints+" sort");
+			currFileName=experimentName+"_"+getTitle+"_"+currChannel+".zip";
+
+			setSlice(nSlices);
+			run("StackReg ", "transformation=[Rigid Body]");
+			
+			saveAs("ZIP", analysisDir+currFileName);
+			/*
+			run("8-bit");
+			run("Properties...", "unit=pixel pixel_width=1.0000 pixel_height=1.0000 voxel_depth=1.0000");
+			saveAs("ZIP", trackDir+currFileName);
+			*/
+			close();
+		}
+	}
+
+}
+
+//------------------------------------------------------------------------------
+function GUI_Build(askForIn, askForChannels, askForNbTP){
+	run("Close All");
+	if(askForIn) inDir=getDirectory("Point at parent folder of your experiment");
+	experimentName=File.getName(inDir);
+	outDir=getDirectory("Point at output folder for stacks reconstructions");
+	trackDir=outDir+"For_Tracking"+File.separator;
+	analysisDir=outDir+"For_Analysis"+File.separator;
+	File.makeDirectory(trackDir);
+	File.makeDirectory(analysisDir);
+
+	if(askForIn) positions=getDirectories(inDir);
+	if(askForChannels) channels=chooseChannels(inDir+positions[0]);
+	if(askForNbTP) nTimePoints=getNumber("Max. number of timepoints to build", nTimePoints);
+}
+
+//------------------------------------------------------------------------------
+function GUI_Positions(){
+	pos=getPositionsNumbers(analysisDir);
+
+	//Transtype to string to avoid having like 1.0, 10.0 etc...
+	posString=newArray(pos.length);
+	for(i=0; i<pos.length; i++) posString[i]=""+pos[i];
+
+	Dialog.create("Data pulling");
+	Dialog.addChoice("First position to consider", posString, posString[0]);
+	Dialog.addChoice("Last position to consider", posString, posString[posString.length-1]);
+	Dialog.show();
+	
+
+	pos1=parseInt(Dialog.getChoice());
+	pos2=parseInt(Dialog.getChoice());
+
+	if(pos2>pos1){
+		return newArray(pos1, pos2);
+	}else{
+		return newArray(pos2, pos1);
+	}
+}
+
+//------------------------------------------------------------------------------
+function getDirectories(dir){
+	out=newArray();
+	subDir=getFileList(dir);
+
+	for(i=0; i<subDir.length; i++){
+		if(File.isDirectory(dir+subDir[i])){
+			out=Array.concat(out, subDir[i]);
+		}
+	}
+
+	return out;
+}
+
+//------------------------------------------------------------------------------
+function getChannels(dir){
+	out=newArray();
+	files=getFileList(dir);
+
+	for(i=0; i<files.length; i++){
+		separateField=split(files[i], "_");
+		channel=separateField[3];
+		
+		if(i==0) out=Array.concat(out, channel);
+		if(channel!=out[0]){
+			out=Array.concat(out, channel);
+		}else{
+			if(i!=0) break;
+		}
+	}
+	return out;
+}
+
+//------------------------------------------------------------------------------
+function chooseChannels(dir){
+	out=newArray();
+	channels=getChannels(dir);
+
+	Dialog.create("Select channels to build");
+	for(i=0; i<channels.length; i++) Dialog.addCheckbox(channels[i], true);
+	Dialog.show();
+
+	
+	for(i=0; i<channels.length; i++){
+		if(Dialog.getCheckbox()) out=Array.concat(out, channels[i]);
+	}
+
+	return out;	
+}
+
+//------------------------------------------------------------------------------
+function performTracking(){
+	GUI_Build(false, false, false);
+
+	Dialog.create("Tracking parameters");
+	Dialog.addNumber("Max displacement between frames when tracking", 25);
+	Dialog.addNumber("Max jump between frames when tracking", 5);
+	Dialog.addNumber("Dots size for display", 10);
+	Dialog.show();	
+	
+	maxDisplacement=Dialog.getNumber();
+	maxJumpFrames=Dialog.getNumber();
+	dotsSize=Dialog.getNumber();
+	
+	
+
+	stacks2track=getSpecificFilesList(analysisDir, "Transmission");
+
+	for(i=0; i<stacks2track.length; i++){
+		open(analysisDir+stacks2track[i]);
+
+		if(nImages==1){
+
+			getPixelSize(unit, pixelWidth, pixelHeight);
+			frameInterval=Stack.getFrameInterval();
+
+			ori=getTitle;
+
+			setBatchMode(true);
+			getAllCellsCenters();
+
+			selectWindow(ori);
+			setBatchMode("exit and display");
+
+			mask=getTitle;
+			selectCellsToTrack(ori, mask);
+			selectWindow(mask);
+			run("Properties...", "unit="+unit+" pixel_width="+pixelWidth+" pixel_height="+pixelHeight+" frame=["+frameInterval+" sec]");
+		
+			imageCalculator("AND create stack", mask, ori);
+			rename("Stack_centers_intensities");
+			trackAllCells(maxDisplacement, maxJumpFrames);
+			close("Stack_centres_intensities");
+
+			generateSupportImg4Tracking();
+
+			run("Merge Channels...", "c1=Stack_centers c2=Tracks c4=["+ori+"] create keep");
+
+			selectWindow("Composite");
+			rename("Check_tracking_"+ori);
+			run("Re-order Hyperstack ...", "channels=[Channels (c)] slices=[Frames (t)] frames=[Slices (z)]");
+			Stack.setChannel(2);
+			run("Enhance Contrast", "saturated=0.35");
+			run("Fire");
+			Stack.setChannel(3);
+			run("Enhance Contrast", "saturated=0.35");
+			run("Grays");
+			setBatchMode("exit and display");
+			run("Properties...", "unit=pixel pixel_width=1.0000 pixel_height=1.0000 voxel_depth=1.0000");
+			saveAs("ZIP", trackDir+"Check_tracking_"+ori);
+			saveAs("Results", trackDir+replace(ori, ".tif", ".xls"));
+			run("Close All");
+		}
+	}
+}
+
+//-------------------------------------------------------------------------
+function getAllCellsCenters(){
+	ori=getTitle;
+	nZ=nSlices;
+	for(i=1; i<=nZ; i++){
+		selectWindow(ori);
+		setSlice(i);
+		getCellsCenters();
+		if(i==1){
+			rename("Stack_centers");
+		}else{
+			selectWindow("Centers");
+			run("Copy");
+			selectWindow("Stack_centers");
+			run("Add Slice");
+			run("Paste");
+			close("Centers");
+		}
+	}
+}
+
+//-------------------------------------------------------------------------
+function getCellsCenters(){
+	//filterBank=newArray("-1 0 1\n", "1 0 -1\n", "-1\n0\n1\n", "1\n0\n-1\n", "-1 0 0\n0 0 0\n0 0 1\n", "1 0 0\n0 0 0\n0 0 -1\n", "0 0 -1\n0 0 0\n1 0 0\n", "0 0 1\n0 0 0\n-1 0 0\n");
+	filterBank=newArray("-1 0 1\n", "1 0 -1\n", "-1\n0\n1\n", "1\n0\n-1\n", "-1 0 0\n0 0 0\n0 0 1\n", "1 0 0\n0 0 0\n0 0 -1\n");
+
+	run("Select None");
+
+	ori=getTitle;
+	max=pow(2, bitDepth())-1;
+	getPixelSize(unit, pixelWidth, pixelHeight);
+	run("Duplicate...", "title=Bkgd_gradient slice");
+	setThreshold(1, max);
+	run("Create Selection");
+	run("Select None");
+
+	run("Gaussian Blur...", "sigma=10");
+	imageCalculator("Subtract create", ori,"Bkgd_gradient");
+
+	run("Copy");
+	run("Convolve...", "text1=["+filterBank[0]+"] normalize slice");
+
+	for(i=1; i<filterBank.length; i++){
+		run("Add Slice");
+		run("Paste");
+		run("Convolve...", "text1=["+filterBank[i]+"] normalize slice");
+	}
+	rename("Stack_gradient");
+
+	run("Z Project...", "projection=[Max Intensity]");
+	rename("Proj_gradient");
+	run("Gaussian Blur...", "sigma=8");
+	setAutoThreshold("Default dark");
+
+	setOption("BlackBackground", false);
+	run("Convert to Mask");
+	run("Watershed");
+	
+	run("Set Measurements...", "centroid redirect=None decimal=9");
+	run("Restore Selection");
+	run("Analyze Particles...", "size=100-Infinity pixel display exclude clear slice");
+
+	newImage("Centers", bitDepth()+"-bit black", getWidth, getHeight, 1);
+	setColor("white");	
+	setForegroundColor(255, 255, 255);
+
+	for(i=0; i<nResults; i++){
+		x=getResult("X", i)/pixelWidth;
+		y=getResult("Y", i)/pixelHeight;
+		makeOval(x-cellWindow/2, y-cellWindow/2, cellWindow, cellWindow);
+		run("Fill", "slice");
+	}
+	
+	run("Select None");
+	run("16-bit");
+	run("Multiply...", "value=65535 stack");
+	close("*_gradient");
+}
+
+//-------------------------------------------------------------------------
+function getCircles(rad){
+	max=pow(2, bitDepth())-1;
+	setColor(max);
+
+	for(i=1; i<=nSlices; i++){
+		setSlice(i);
+		run("Select None");
+		run("Find Maxima...", "noise=1 output=[Point Selection]");
+		getStatistics(area, mean, min, max, std, histogram);
+		if(Roi.getType!=-1 && area!=getWidth*getHeight){
+			run("Enlarge...", "enlarge="+rad);
+			run("Draw", "slice");
+		}
+	}
+}
+
+
+//------------------------------------------------------------------------------
+function selectCellsToTrack(ori, mask){
+	selectWindow(mask);
+	setSlice(1);
+	run("Find Maxima...", "noise=1 output=[Point Selection]");
+	getStatistics(area, mean, min, max, std, histogram);
+	if(Roi.getType!=-1 && area!=getWidth*getHeight){
+		run("Enlarge...", "enlarge=15 pixel");
+		roiManager("Reset");
+		roiManager("Add");
+		roiManager("Remove Channel Info");
+		roiManager("Remove Slice Info");
+		roiManager("Remove Frame Info");
+		roiManager("Split");
+		roiManager("Select", 0);
+		roiManager("Delete");
+	}
+	selectWindow(ori);
+	setSlice(1);
+	roiManager("Show All with labels");
+	
+	setTool("oval");
+	waitForUser("Delete unwanted cells \nand/or add cells\nfrom/to the RoiManager");
+}
+
+//------------------------------------------------------------------------------
+function trackAllCells(maxDisplacement, maxJumpFrames){
+	run("Clear Results");
+	run("Input/Output...", "jpeg=85 gif=-1 file=.xls copy_row save_column");
+
+	getPixelSize(unit, pixelWidth, pixelHeight);
+	frameInterval=Stack.getFrameInterval();
+	
+	setSlice(nSlices);
+	nRois=roiManager("Count");
+	for(i=0; i<nRois; i++){
+		roiManager("Select", i);
+		List.setMeasurements;
+		x=List.getValue("X");
+		y=List.getValue("Y");
+		tracking(maxDisplacement, maxJumpFrames, x, y, i+1, pixelWidth, frameInterval);
+	}
+}
+
+//------------------------------------------------------------------------------
+function tracking(maxDisplacement, maxJumpFrames, initX, initY, trackNb, pixelWidth, frameInterval){
+	xPos=initX;
+	yPos=initY;
+	makeOval(x-cellWindow/2, y-cellWindow/2, cellWindow, cellWindow);
+	getStatistics(area, intensity, min, max, std, histogram);
+			
+	xPosOld=initX;
+	yPosOld=initY;
+	intensityOld=intensity;
+
+	jumpedFrames=0;
+	cumDist=0;
+	displacement=maxDisplacement;
+
+	setResult("Track nb", nResults, trackNb);
+	setResult("Slice nb", nResults-1, 1);
+	setResult("X", nResults-1, xPos);
+	setResult("Y", nResults-1, yPos);
+	setResult("Distance", nResults-1, -1);
+	setResult("Cumulated_Distance", nResults-1, NaN);
+	setResult("Velocity", nResults-1, -1);
+	setResult("Pixel Value", nResults-1, intensity);
+
+	run("Properties...", "unit=pixel pixel_width=1.0000 pixel_height=1.0000 voxel_depth=1.0000");
+
+	for(i=2; i<=nSlices; i++){
+		setSlice(i);
+		makeOval(xPos-displacement/2, yPos-displacement/2, displacement, displacement);
+		Roi.setName("Search_area");
+		run("Find Maxima...", "noise=128 output=[Point Selection]");
+		
+		//If no Roi, jump frame, else get coordinates
+		if(Roi.getName=="Search_area"){
+			jumpedFrames++;
+			displacement=displacement+maxDisplacement;
+			if(jumpedFrames>maxJumpFrames) i=nSlices;
+		}else{
+			jumpedFrames=0;
+			displacement=maxDisplacement;
+
+			getSelectionCoordinates(xpoints, ypoints);
+			if(xpoints.length==1){
+				pos=0;
+			}else{
+				pos=findClosestPoint(xPos, yPos, xpoints, ypoints);
+			}
+			xPos=xpoints[pos];
+			yPos=ypoints[pos];
+			
+			makeOval(x-cellWindow/2, y-cellWindow/2, cellWindow, cellWindow);
+			getStatistics(area, intensity, min, max, std, histogram);
+			//if(mean==0 || (abs(intensityOld-intensity)<10 && abs(xPosOld-xPos)<0.25 && abs(yPosOld-yPos)<0.25)) break;
+			//if(abs(intensityOld-intensity)<10) break;
+			
+
+			setResult("Track nb", nResults, trackNb);
+			setResult("Slice nb", nResults-1, i);
+			setResult("X", nResults-1, xPos);
+			setResult("Y", nResults-1, yPos);
+
+			distance=pixelWidth*sqrt((xPos-xPosOld)*(xPos-xPosOld)+(yPos-yPosOld)*(yPos-yPosOld));
+			velocity=distance/frameInterval;
+			cumDist+=distance;
+			
+			setResult("Distance", nResults-1, distance);
+			setResult("Cumulated_Distance", nResults-1, cumDist);
+			setResult("Velocity", nResults-1, velocity);
+
+			
+			setResult("Pixel Value", nResults-1, intensity);
+
+			xPosOld=xPos;
+			yPosOld=yPos;
+			intensityOld=intensity;
+
+			//Dead cell check
+			if(std/intensity<0.25) i=nSlices+1;
+		}
+	}
+	updateResults();
+}
+
+//------------------------------------------------------------------------------
+function findClosestPoint(xPos, yPos, xpoints, ypoints){
+	dist=newArray(xpoints.length);
+	for(i=0; i<xpoints; i++) dist[i]=sqrt((xpoints[i]-xPos)*(xpoints[i]-xPos)+(ypoints[i]-yPos)*(ypoints[i]-yPos));
+	pos=Array.findMinima(dist, 0);
+	return pos[0];
+}
+
+//------------------------------------------------------------------------------
+function generateSupportImg4Tracking(){
+	newImage("Tracks", bitDepth()+"-bit black", getWidth, getHeight, nSlices);
+	for(i=0; i<nResults; i++){
+		track=getResult("Track nb", i);
+		x=getResult("X", i);
+		y=getResult("Y", i);
+		timepoint=getResult("Slice nb", i);
+		setForegroundColor(track, track, track);
+		setSlice(timepoint);
+		makeOval(x-cellBody/2, y-cellBody/2, cellBody, cellBody);
+		if(selectionType() !=-1) run("Draw", "slice");
+	}
+	run("Select None");
+	run("Fire");
+	resetMinAndMax();
+}
+
+//------------------------------------------------------------------------------
+function cutOutCells(){
+	GUI_Build(false, false, false);
+	xlsFiles=getSpecificFilesList(trackDir, "xls");
+	for(i=0; i<xlsFiles.length; i++){
+		MTFile=xlsFiles[i];
+		
+		img=analysisDir+replace(MTFile, ".xls", ".zip");
+		rois=analysisDir+replace(MTFile, ".xls", "_Rois.zip");
+
+		if(File.exists(img)){
+			open(img);
+			setVoxelSize(1, 1, 1, "pixel");
+			//Extract positions' name
+			position=substring(MTFile, lastIndexOf(MTFile, "_Pos")+1);
+			position=substring(position, 0, indexOf(position, "_"));
+			outDirAnalysis=analysisDir+position+File.separator;
+			File.makeDirectory(outDirAnalysis);
+			readTable();
+			getCellsSizes();
+			roiManager("Deselect");
+			roiManager("Save", rois);
+			cropCells();
+			run("Close All");
+		}
+	}
+}
+
+//------------------------------------------------------------------------------
+function readTable(){
+	content=File.openAsString(trackDir+MTFile);
+	lines=split(content, "\n");
+
+	cellNb=newArray(lines.length-1);
+	timepoint=newArray(lines.length-1);
+	x=newArray(lines.length-1);
+	y=newArray(lines.length-1);
+	
+	for(i=1; i<lines.length; i++){
+		columns=split(lines[i], "\t");
+		cellNb[i-1]=columns[0];
+		timepoint[i-1]=columns[1];
+		x[i-1]=columns[2];
+		y[i-1]=columns[3];
+	}
+
+	nbCells=cellNb[cellNb.length-1];
+	nTPperCell=newArray(nbCells);
+	for(i=0; i<cellNb.length; i++) nTPperCell[cellNb[i]-1]+=1;	
+}  
+
+
+//------------------------------------------------------------------------------
+function getCellsSizes(){
+	index=-1;
+	cellBody=newArray(nbCells);
+	cellDiameter=newArray(nbCells);
+	
+	roiManager("Reset");
+	for(i=0; i<nbCells; i++){
+		index+=nTPperCell[i];
+		cellBody[i]=defaultCellBodySize;
+		setSlice(timepoint[index]);
+		makeOval(x[index]-cellBody[i]/2, y[index]-cellBody[i]/2, cellBody[i], cellBody[i]);
+		setTool("freehand");
+		while(!isKeyDown("space")){
+			showStatus("Cell"+(i+1)+" (body): draw cell body, then press space to validate");
+          			wait(10);
+		}
+		wait(500);
+
+		if(selectionType()!=-1){
+			
+			roiManager("Add");
+			
+			cellDiameter[i]=defaultCellDiameter;
+			setSlice(timepoint[index]);
+			makeOval(x[index]-cellDiameter[i]/2, y[index]-cellDiameter[i]/2, cellDiameter[i], cellDiameter[i]);
+          			setTool("freehand");
+			while(!isKeyDown("space")){
+				showStatus("Cell"+(i+1)+" (outlines): draw cell outlines, then press space to validate");
+				wait(10);
+			}
+			wait(500);
+			if(selectionType!=-1){
+				roiManager("Add");
+				
+				roiCellBody=roiManager("Count")-2;
+				roiCellOutline=roiManager("Count")-1;
+				indexes=newArray(roiCellBody, roiCellOutline);
+				roiManager("Select", indexes);
+				roiManager("XOR");
+				roiManager("Add");
+				roiManager("Select", roiManager("Count")-1);
+				roiManager("Rename", "Cell"+(i+1));
+				roiManager("Remove Frame Info");
+
+				roiManager("Select", roiCellBody);
+				roiManager("Delete");
+				roiManager("Select", roiCellBody);
+				roiManager("Delete");
+			}else{
+				roiManager("Select", roiManager("Count")-1);
+				roiManager("Delete");
+			}
+		}
+	}
+}
+
+//------------------------------------------------------------------------------
+function cropCells(){
+	ori=getTitle;
+	
+	content=File.openAsString(trackDir+File.separator+MTFile);
+	lines=split(content, "\n");
+	
+	index=0;
+	indexResults=0;
+	indexRoi=0;
+	setBatchMode(true);
+	f=File.open(outDirAnalysis+MTFile);
+	print(f, lines[0]+"\tEndPoints(pixels)\tCrossPoints(pixels)\tSkeleton(pixels)\tArea(pixels)");	
+
+	for(i=0; i<nbCells; i++){
+		showStatus("Processing Cell"+(i+1));
+		roiManager("Reset");
+		roiManager("Open", rois);
+		nCellsToAnalyse=roiManager("Count");
+		roiManager("Select", indexRoi);
+
+		roiName=Roi.getName;
+		nbRoi=replace(roiName, "Cell", "");
+		nbRoi=parseInt(nbRoi)-1;
+
+		if(i!=nbRoi){
+			index+=nTPperCell[i];
+			indexResults+=nTPperCell[i];
+		}else{
+			roiManager("Split");
+			roiManager("Select", roiManager("Count")-1);
+			getBoundingRect(xMaxi, yMaxi, wMaxi, hMaxi);
+			roiManager("Delete");
+			roiManager("Select", roiManager("Count")-1);
+			getBoundingRect(xMini, yMini, wMini, hMini);
+			roiManager("Delete");
+
+			offsetX=-(xMini-xMaxi)-wMini/2;
+			offsetY=-(yMini-yMaxi)-hMini/2;
+
+			setBackgroundColor(0, 0, 0);
+		
+			for(j=0; j<nTPperCell[i]; j++){
+				selectWindow(ori);
+				setSlice(timepoint[index]);
+				roiManager("Select", indexRoi);
+				Roi.move(x[index]+offsetX, y[index]+offsetY);
+
+				//Ensures the ROI is ON the image, otherwise duplication will bug
+				run("Create Mask");
+				run("Create Selection");
+				close("Mask");
+				run("Restore Selection");
+
+				run("Duplicate...", "title=Cell"+(i+1)+"_"+(j+1));
+				index++;
+			}
+	
+
+			if(nImages>3){
+				run("Images to Stack", "method=[Copy (center)] name=Stack title=Cell"+(i+1)+" use");
+				setSlice(nSlices);
+				//run("StackReg ", "transformation=[Rigid Body]");
+			
+				roiManager("Select", indexRoi);
+				getBoundingRect(xTopLeft, yTopLeft, width, height);
+				Roi.move(getWidth/2-width/2, getHeight/2-height/2);
+				saveAs("ZIP", outDirAnalysis+"Cell"+(i+1)+".zip");
+				analysis=detection();
+				for(j=0; j<analysis.length; j++) print(f, lines[indexResults++]+"\t"+analysis[j]);
+				run("Restore Selection");
+				saveAs("ZIP", outDirAnalysis+"Cell"+(i+1)+"_detections.zip");
+				close();
+			}
+			indexRoi++;
+			if(indexRoi==nCellsToAnalyse) i=nbCells;
+		}
+	}
+	File.close(f);
+	setBatchMode("exit and display");
+}
+
+//------------------------------------------------------------------------------
+function detection(){
+	ori=getTitle;
+	roiManager("Reset");
+	roiManager("Add");
+
+	run("Select None");
+	run("Despeckle", "stack");
+	run("Log", "stack");
+	run("Enhance Contrast", "saturated=0.35");
+	run("Enhance Contrast...", "saturated=0 normalize equalize process_all use");
+	run("Duplicate...", "title=Bkgd duplicate");
+	run("Maximum...", "radius=3 stack");
+	run("Minimum...", "radius=3 stack");
+	imageCalculator("Divide create 32-bit stack", ori,"Bkgd");
+	rename("BkgdCorr");
+	close("Bkgd");
+
+	run("Convert to Mask", "method=RenyiEntropy background=Light");
+	run("Analyze Particles...", "size=10-"+(getWidth*getHeight/4)+" pixel circularity=0.00-0.80 show=Masks stack");
+	rename("SkeletonTmp");
+	close("BkgdCorr");
+
+	run("Options...", "iterations=1 count=1 do=Nothing");
+	run("Skeletonize", "stack");
+
+	run("Analyze Particles...", "size=3-"+(getWidth*getHeight/4)+" pixel circularity=0.00-0.80 show=Masks stack");
+	rename("Skeleton");
+	close("SkeletonTmp");
+
+	//Remove isolated parts
+	setForegroundColor(0, 0, 0);
+	setBackgroundColor(255, 255, 255);
+	roiManager("Select", 0);
+	roiManager("Split");
+	roiManager("Deselect");
+	roiManager("Remove Slice Info");
+	for(i=1; i<=nSlices; i++){
+		selectWindow("Skeleton");
+		setSlice(i);
+		run("Select None");
+		run("Duplicate...", "title=Mask");
+		roiManager("Select", 2);
+		setBackgroundColor(0, 0, 0);
+		run("Clear", "slice");
+		doWand(getWidth/2, getHeight/2, 0.0, "8-connected");
+		roiManager("Add");
+		close("Mask");
+		selectWindow("Skeleton");
+		roiManager("Select", 3);
+		setBackgroundColor(255, 255, 255);
+		run("Clear Outside", "slice");
+		roiManager("Delete");
+		run("Select None");
+	}
+	
+	/*
+	roiManager("Select", 0);
+	setForegroundColor(255, 255, 255);
+	setBackgroundColor(255, 255, 255);
+	run("Clear Outside", "stack");
+	run("Select None");
+	*/
+	
+	
+	run("Duplicate...", "title=TmpEndPoints duplicate");
+	run("Options...", "iterations=1 count=7 do=Erode stack");
+	imageCalculator("Subtract create 32-bit stack", "Skeleton", "TmpEndPoints");
+	rename("EndPoints");
+
+	selectWindow("TmpEndPoints");
+	run("Options...", "iterations=1 count=6 do=Erode stack");
+	for(i=1; i<=nSlices; i++){
+		setSlice(i);
+		run("Select All");
+		run("Find Maxima...", "noise=128 output=[Single Points] light");
+		run("Copy");
+		close();
+		selectWindow("TmpEndPoints");
+		run("Paste");
+	}
+	rename("CrossPoints");
+	close("TmpCrossPoints");
+
+	selectWindow("Skeleton");
+	run("16-bit");
+	selectWindow("EndPoints");
+	run("16-bit");
+	selectWindow("CrossPoints");
+	run("16-bit");
+
+	run("Merge Channels...", "c1=EndPoints c2=CrossPoints c3=Skeleton c4=["+ori+"] create");
+
+	Stack.getDimensions(width, height, channels, slices, frames);
+	resultsLines=newArray(slices);
+
+	for(i=1; i<=slices; i++){
+		for(j=1; j<4; j++){
+			Stack.setPosition(j, i, 1);
+			getStatistics(area, mean, min, max, std, histogram);
+			resultsLines[i-1]=""+resultsLines[i-1]+histogram[255]+"\t";
+		}
+		resultsLines[i-1]=""+resultsLines[i-1]+(width*height);
+	}
+
+	run("Options...", "iterations=1 count=1 do=Nothing");
+	return resultsLines;
+}
+
+//-------------------------------------------------------------------------------
+function fuseAndSaveXLS(start, stop){
+	pathOut=analysisDir+"Pulled_data_pos"+start+"-"+stop+".xls";
+
+	f=File.open(pathOut);
+	print(f, "Position\tTrack nb\tSlice nb\tX\tY\tDistance\tCumulated_Distance\tVelocity\tPixel Value\tEndPoints(pixels)\tCrossPoints(pixels)\tSkeleton(pixels)\tArea(pixels)");	
+	File.close(f);
+
+	for(i=start; i<=stop; i++){
+		//Get basename
+		tmpList=getSpecificFilesList2(analysisDir+"Pos"+i, experimentName+"_Pos"+i, ".xls");
+		if(tmpList.length>0){
+			dataFile=tmpList[0];
+			path=analysisDir+"Pos"+i+File.separator+dataFile;
+			
+			//Load file
+			contentString=File.openAsString(path);
+			contentArray=split(contentString, "\n");
+			
+			for(j=1; j<contentArray.length; j++) File.append(""+i+"\t"+contentArray[j], pathOut);
+		}
+	}
+}
+
+//-------------------------------------------------------------------------------
+function getSpecificFilesList(dir, search){
+	tmp=getFileList(dir);
+	filesList=newArray(0);
+
+	for(i=0; i<tmp.length; i++) if(indexOf(tmp[i], search)!=-1) filesList=Array.concat(filesList, tmp[i]);
+	
+	return filesList;
+}
+
+
+//-------------------------------------------------------------------------------
+function getSpecificFilesList2(dir, search, ext){
+	tmp=getFileList(dir);
+	filesList=newArray(0);
+
+	for(i=0; i<tmp.length; i++) if(indexOf(tmp[i], search)!=-1 && endsWith(tmp[i], ext)) filesList=Array.concat(filesList, tmp[i]);
+	
+	return filesList;
+}
+//-------------------------------------------------------------------------------
+function getPositionsNumbers(dir){
+	tmp=getFileList(dir);
+	filesList=newArray(0);
+
+	for(i=0; i<tmp.length; i++) if(File.isDirectory(dir+tmp[i]) && startsWith(tmp[i], "Pos")){
+		pos=replace(tmp[i], "Pos", "");
+		pos=replace(pos, File.separator, "");
+		pos=parseInt(pos);
+		
+		filesList=Array.concat(filesList, pos);
+	}
+	Array.sort(filesList);
+	return filesList;
+}
+
+//---------------------------------------------------------------------------------
+function execR(script, name){
+	File.saveString(script, getDirectory("imagej")+name);
+
+	cmd="R CMD BATCH "+name;
+	if(indexOf(getInfo("os.name"), "Mac") !=-1) cmd="/usr/local/bin/"+cmd;
+	exec(cmd);
+}
+
+//---------------------------------------------------------------------------------
+function getRScript(dir, baseName){
+	return
+
+	"setwd('"+replace(dir, "\\", "/")+"');\n"
+	+"filename<-'"+replace(baseName, ".xls", "")+"';\n"
+
+	+"data<-read.csv(paste(filename, '.xls', sep=''), header=TRUE, dec='.', sep='\t');\n"
+	+"data<-data[data$Velocity!=-1 & data$Velocity!='NaN', ]; #Remove NaN values and -1 velocity lines\n"
+
+	+"pdf(paste(filename, '.pdf', sep=''), paper='a4r');\n"
+
+	+"#Histograms over all data\n"
+	+"par(mfrow=c(2,2), oma = c(0, 0, 2, 0));\n"
+	+"hist(data$Velocity, freq=FALSE, xlab='Velocity', main='');\n"
+	+"hist(data$Skeleton.pixels., freq=FALSE, xlab='Skeleton', main='');\n"
+	+"hist(data$CrossPoints.pixels., freq=FALSE, xlab='Crosspoints', main='');\n"
+	+"hist(data$EndPoints.pixels., freq=FALSE, xlab='Endpoints', main='');\n"
+	+"title(main='Parameters distribution over all data', outer=TRUE);\n"
+
+	+"#Scatters plots over all data\n"
+	+"par(mfrow=c(2,2));\n"
+	+"plot(data$Velocity, data$Skeleton.pixels., type='p', xlab='Velocity', ylab='Skeleton', pch='.');\n"
+	+"plot(data$Velocity, data$CrossPoints.pixels., type='p', xlab='Velocity', ylab='Crosspoints', pch='.');\n"
+	+"plot(data$Velocity, data$EndPoints.pixels., type='p', xlab='Velocity', ylab='Endpoints', pch='.');\n"
+	+"plot(data$Skeleton.pixels., data$EndPoints.pixels., type='p', xlab='Skeleton', ylab='Endpoints', pch='.');\n"
+	+"title(main='Scatter plots over all data', outer=TRUE);\n"
+
+	+"#Plots for each cell\n"
+	+"cells<-unique(data$Track.nb);\n"
+	+"for(i in 1:length(cells)){\n"
+	+"  par(mfrow=c(2,2));\n"
+	+"  plot(data$Velocity[data$Track.nb==cells[i]], data$Skeleton.pixels.[data$Track.nb==cells[i]], xlab='Velocity', ylab='Skeleton');\n"
+	+"  plot(data$Velocity[data$Track.nb==cells[i]], data$CrossPoints.pixels.[data$Track.nb==cells[i]], xlab='Velocity', ylab='Crosspoints');\n"
+	+"  plot(data$Velocity[data$Track.nb==cells[i]], data$EndPoints.pixels.[data$Track.nb==cells[i]], xlab='Velocity', ylab='Endpoints');\n"
+	+"  plot(data$Skeleton.pixels.[data$Track.nb==cells[i]], data$EndPoints.pixels.[data$Track.nb==cells[i]], xlab='Skeleton', ylab='Endpoints');\n"
+	+"  title(main=paste('Data from cell ', i, sep=''), outer=TRUE);\n"
+	+"}\n"
+	+"dev.off();";
+}
+
+//---------------------------------------------------------------------------------
+function getRScriptPerPosition(dir, baseName){
+	return
+
+	"setwd('"+replace(dir, "\\", "/")+"');\n"
+	+"filename<-'"+replace(baseName, ".xls", "")+"';\n"
+
+	+"data<-read.csv(paste(filename, '.xls', sep=''), header=TRUE, dec='.', sep='\t');\n"
+	+"pdf(paste(filename, '_Global-Analysis.pdf', sep=''), paper='a4');\n"
+
+	+"#----------------------START FUNCTION---------------------\n"
+	+"plotAndWrite<-function(dataSummary, yLabel, title){\n"
+	+"  ymin<-min(dataSummary$mean-dataSummary$sd, na.rm=TRUE);\n"
+	+"  ymax<-max(dataSummary$mean+dataSummary$sd, na.rm=TRUE);\n"
+	+"  plot(dataSummary$Time, dataSummary$mean, type='l', xlab='Timepoint', ylab=yLabel, pch='.', ylim=c(ymin, ymax), col='red');\n"
+	+"  segments(dataSummary$Time, dataSummary$mean-dataSummary$sd,dataSummary$Time, dataSummary$mean+dataSummary$sd);\n"
+	+"  epsilon = 0.5;\n"
+	+"  segments(dataSummary$Time-epsilon,dataSummary$mean-dataSummary$sd,dataSummary$Time+epsilon,dataSummary$mean-dataSummary$sd);\n"
+	+"  segments(dataSummary$Time-epsilon,dataSummary$mean+dataSummary$sd,dataSummary$Time+epsilon,dataSummary$mean+dataSummary$sd);\n"
+  	+"  points(dataSummary$Time, dataSummary$mean, type='l', xlab='Timepoint', ylab=yLabel, pch='.', ylim=c(ymin, ymax), col='red');\n"
+	
+	+"  write.csv(dataSummary, file=paste(title, '_', yLabel, '.csv', sep=''));\n"
+	+"}\n"
+	+"#----------------------END FUNCTION---------------------\n"
+
+	+"par(mfrow=c(3,2), oma = c(0, 0, 2, 0));\n"
+
+	+"#Endpoints\n"
+	+"dataSummary<-data.frame(sort(unique(data$Slice.nb)) ,sapply(split(data$EndPoints.pixels., data$Slice.nb), mean), sapply(split(data$EndPoints.pixels., data$Slice.nb), sd), sapply(split(data$EndPoints.pixels., data$Slice.nb), length));\n"
+	+"colnames(dataSummary)<-c('Time', 'mean', 'sd', 'n');\n"
+	+"plotAndWrite(dataSummary, 'Average nb endpoints', '"+baseName+"');\n"
+
+	+"#Crosspoints\n"
+	+"dataSummary<-data.frame(sort(unique(data$Slice.nb)) ,sapply(split(data$CrossPoints.pixels., data$Slice.nb), mean), sapply(split(data$CrossPoints.pixels., data$Slice.nb), sd), sapply(split(data$CrossPoints.pixels., data$Slice.nb), length));\n"
+	+"colnames(dataSummary)<-c('Time', 'mean', 'sd', 'n');\n"
+	+"plotAndWrite(dataSummary, 'Average nb crosspoints', '"+baseName+"');\n"
+
+	+"#Skeleton\n"
+	+"dataSummary<-data.frame(sort(unique(data$Slice.nb)) ,sapply(split(data$Skeleton.pixels., data$Slice.nb), mean), sapply(split(data$Skeleton.pixels., data$Slice.nb), sd), sapply(split(data$Skeleton.pixels., data$Slice.nb), length));\n"
+	+"colnames(dataSummary)<-c('Time', 'mean', 'sd', 'n');\n"
+	+"plotAndWrite(dataSummary, 'Average skeleton length', '"+baseName+"');\n"
+
+	+"#Cumulated distance\n"
+	+"dataSummary<-data.frame(sort(unique(data$Slice.nb)) ,sapply(split(data$Cumulated_Distance, data$Slice.nb), mean), sapply(split(data$Cumulated_Distance, data$Slice.nb), sd), sapply(split(data$Cumulated_Distance, data$Slice.nb), length));\n"
+	+"colnames(dataSummary)<-c('Time', 'mean', 'sd', 'n');\n"
+	+"plotAndWrite(dataSummary, 'Cumulated travelled distance', '"+baseName+"');\n"
+
+	+"#Y vs X positions (Y is negative to get inverted ie same as on the image)\n"
+	+"plot(data$X, -data$Y, type='p', xlab='X', ylab='Y', pch='.', col=data$Track.nb);\n"
+	
+	+" title(main=paste('Data from ', '"+baseName+"', sep=''), outer=TRUE);\n"
+
+	+"dev.off();";
+}
+
+
+
+
